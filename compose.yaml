@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: abc-vpn-postgres
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: abcvpn
+      POSTGRES_USER: abcvpn
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - abcvpn-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abcvpn"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  app:
+    container_name: abc-vpn-app
+    restart: unless-stopped
+    build: .
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - default
+      - remnawave-network
+volumes:
+  abcvpn-postgres:
+networks:
+  remnawave-network:
+    external: true

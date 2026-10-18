@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-initial-schema.yaml
+  - include:
+      file: db/changelog/002-devices.yaml
+  - include:
+      file: db/changelog/003-remove-blocked-device-guards.yaml
+  - include:
+      file: db/changelog/004-subscription-tariffs.yaml
+  - include:
+      file: db/changelog/005-tariff-display-names.yaml
+  - include:
+      file: db/changelog/006-trial-duration.yaml
+  - include:
+      file: db/changelog/007-support-message-routes.yaml
+  - include:
+      file: db/changelog/008-analytics-events.yaml
+  - include:
+      file: db/changelog/009-broadcasts.yaml
+  - include:
+      file: db/changelog/010-tariff-prices.yaml
+  - include:
+      file: db/changelog/011-referral-wallet.yaml

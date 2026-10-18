@@ -1,0 +1,45 @@
+https://panel.abc-vpn.example.com {
+    encode
+    @direct_subscription path /api/sub/* /sub/*
+    respond @direct_subscription 404
+    reverse_proxy * http://remnawave:3000
+}
+
+https://sub.abc-vpn.example.com {
+    encode
+
+    @device_request header X-Hwid *
+    reverse_proxy @device_request http://abc-vpn-app:8080
+
+    reverse_proxy http://remnawave-subscription-page:3010 {
+        header_up Host {host}
+        header_up X-Forwarded-Host {host}
+        header_up X-Forwarded-Proto https
+    }
+}
+
+https://abc-vpn.example.com {
+    encode
+    reverse_proxy * http://abc-vpn-app:8080
+}
+
+https://api.abc-vpn.example.com {
+    encode
+    reverse_proxy * http://abc-vpn-app:8080
+}
+
+:8081 {
+    reverse_proxy http://remnawave:3000 {
+        header_up Host sub.abc-vpn.example.com
+        header_up X-Forwarded-Host sub.abc-vpn.example.com
+        header_up X-Forwarded-Proto https
+    }
+}
+
+:8082 {
+    reverse_proxy http://remnawave:3000 {
+        header_up Host panel.abc-vpn.example.com
+        header_up X-Forwarded-Host panel.abc-vpn.example.com
+        header_up X-Forwarded-Proto https
+    }
+}

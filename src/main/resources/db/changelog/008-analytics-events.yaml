@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-analytics-events
+      author: abcvpn
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              CREATE TABLE analytics_events (
+                  id BIGSERIAL PRIMARY KEY,
+                  telegram_id BIGINT NOT NULL REFERENCES users(telegram_id) ON DELETE CASCADE,
+                  event_type VARCHAR(64) NOT NULL,
+                  occurred_at TIMESTAMPTZ NOT NULL,
+                  UNIQUE(telegram_id,event_type)
+              );
+              CREATE INDEX analytics_events_type_time_idx ON analytics_events(event_type,occurred_at);

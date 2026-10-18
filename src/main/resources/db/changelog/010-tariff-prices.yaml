@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 010-tariff-prices
+      author: abcvpn
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              UPDATE tariffs SET name = '3 месяца · скидка 33%', price_rub = 300.00 WHERE code = 'BASIC_3M';
+              UPDATE tariffs SET name = '6 месяцев · скидка 40%', price_rub = 540.00 WHERE code = 'BASIC_6M';
+              UPDATE tariffs SET name = '12 месяцев · скидка 50%', price_rub = 900.00 WHERE code = 'BASIC_12M';

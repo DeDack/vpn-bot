@@ -1,0 +1,65 @@
+databaseChangeLog:
+  - changeSet:
+      id: 011-referral-wallet
+      author: abcvpn
+      contextFilter: referral-wallet
+      preConditions:
+        - onFail: HALT
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: 1
+            sql: SELECT COUNT(*) FROM tariffs WHERE code='BASIC'
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              CREATE TABLE wallet_accounts (
+                  telegram_id BIGINT PRIMARY KEY REFERENCES users(telegram_id) ON DELETE CASCADE,
+                  available_kopecks BIGINT NOT NULL DEFAULT 0 CHECK (available_kopecks >= 0),
+                  reserved_kopecks BIGINT NOT NULL DEFAULT 0 CHECK (reserved_kopecks >= 0),
+                  total_earned_kopecks BIGINT NOT NULL DEFAULT 0 CHECK (total_earned_kopecks >= 0),
+                  total_spent_kopecks BIGINT NOT NULL DEFAULT 0 CHECK (total_spent_kopecks >= 0),
+                  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+              );
+
+              INSERT INTO wallet_accounts(telegram_id)
+              SELECT telegram_id FROM users ON CONFLICT DO NOTHING;
+
+              ALTER TABLE payments ADD COLUMN wallet_reserved_kopecks BIGINT NOT NULL DEFAULT 0
+                  CHECK (wallet_reserved_kopecks >= 0);
+
+              CREATE TABLE wallet_transactions (
+                  id BIGSERIAL PRIMARY KEY,
+                  telegram_id BIGINT NOT NULL REFERENCES users(telegram_id) ON DELETE CASCADE,
+                  amount_kopecks BIGINT NOT NULL CHECK (amount_kopecks > 0),
+                  direction VARCHAR(8) NOT NULL CHECK (direction IN ('CREDIT','DEBIT')),
+                  type VARCHAR(48) NOT NULL CHECK (type IN (
+                      'REFERRAL_REWARD','SUBSCRIPTION_PAYMENT','SUBSCRIPTION_PAYMENT_RESERVE',
+                      'SUBSCRIPTION_PAYMENT_RELEASE','WITHDRAWAL','WITHDRAWAL_HOLD',
+                      'WITHDRAWAL_RELEASE','ADMIN_ADJUSTMENT')),
+                  status VARCHAR(16) NOT NULL CHECK (status IN ('PENDING','COMPLETED','RELEASED')),
+                  reference_key VARCHAR(160) NOT NULL UNIQUE,
+                  payment_id UUID REFERENCES payments(id) ON DELETE SET NULL,
+                  referred_telegram_id BIGINT REFERENCES users(telegram_id) ON DELETE SET NULL,
+                  description VARCHAR(255),
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  completed_at TIMESTAMPTZ
+              );
+              CREATE INDEX wallet_transactions_user_created_idx
+                  ON wallet_transactions(telegram_id,created_at DESC,id DESC);
+              CREATE UNIQUE INDEX wallet_referral_reward_payment_idx
+                  ON wallet_transactions(payment_id)
+                  WHERE type='REFERRAL_REWARD';
+              CREATE UNIQUE INDEX wallet_reserve_payment_idx
+                  ON wallet_transactions(payment_id)
+                  WHERE type='SUBSCRIPTION_PAYMENT_RESERVE';
+
+              INSERT INTO tariffs(code,name,duration_days,price_rub,device_limit,traffic_limit,remnawave_squad_id,enabled,sort_order)
+              SELECT 'REFERRAL_1D','1 день',1,7.00,device_limit,traffic_limit,remnawave_squad_id,FALSE,5
+              FROM tariffs WHERE code='BASIC'
+              ON CONFLICT (code) DO NOTHING;
+
+              INSERT INTO tariffs(code,name,duration_days,price_rub,device_limit,traffic_limit,remnawave_squad_id,enabled,sort_order)
+              SELECT 'REFERRAL_7D','1 неделя',7,49.00,device_limit,traffic_limit,remnawave_squad_id,FALSE,6
+              FROM tariffs WHERE code='BASIC'
+              ON CONFLICT (code) DO NOTHING;

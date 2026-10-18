@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: abc-vpn
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/abcvpn}
+    username: ${DATABASE_USERNAME:abcvpn}
+    password: ${DATABASE_PASSWORD:abcvpn}
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  thymeleaf:
+    cache: false
+  task:
+    scheduling:
+      pool:
+        size: 4
+server:
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: ${ADMIN_COOKIE_SECURE:true}
+        same-site: strict
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+abc-vpn:
+  telegram:
+    token: ${TELEGRAM_BOT_TOKEN:}
+    admin-id: ${TELEGRAM_ADMIN_ID:0}
+    bot-username: ${TELEGRAM_BOT_USERNAME:abc_vpn_bot}
+    enabled: ${TELEGRAM_ENABLED:true}
+  remnawave:
+    base-url: ${REMNAWAVE_BASE_URL:}
+    subscription-base-url: ${REMNAWAVE_SUBSCRIPTION_BASE_URL:${REMNAWAVE_BASE_URL:}}
+    token: ${REMNAWAVE_TOKEN:}
+    webhook-secret: ${REMNAWAVE_WEBHOOK_SECRET:}
+  platega:
+    enabled: ${PAYMENT_ENABLED:false}
+    base-url: ${PLATEGA_BASE_URL:https://app.platega.io/}
+    merchant-id: ${PLATEGA_MERCHANT_ID:}
+    secret: ${PLATEGA_SECRET:}
+  public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
+  api-base-url: ${API_BASE_URL:https://api.abc-vpn.example.com}
+  support-username: ${SUPPORT_USERNAME:@abc_vpn_support}
+  privacy-policy-url: ${PRIVACY_POLICY_URL:https://abc-vpn.example.com/privacy}
+  terms-url: ${TERMS_URL:https://abc-vpn.example.com/terms}
+  privacy-version: ${PRIVACY_VERSION:1.0}
+  terms-version: ${TERMS_VERSION:1.0}
+  admin-password: ${ADMIN_WEB_PASSWORD:}
+  admin-session-secret: ${ADMIN_WEB_SESSION_SECRET:}
+  referral-trial-days: ${REFERRAL_TRIAL_DAYS:2}
+  referral-payment-days: ${REFERRAL_PAYMENT_DAYS:7}
+  sync-delay-ms: ${VPN_SYNC_DELAY_MS:10000}
+  expiry-delay-ms: ${VPN_EXPIRY_DELAY_MS:60000}
+  reconciliation-delay-ms: ${VPN_RECONCILIATION_DELAY_MS:900000}
+  payment-reconciliation-delay-ms: ${PAYMENT_RECONCILIATION_DELAY_MS:60000}

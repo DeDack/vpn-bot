@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-subscription-tariffs
+      author: abcvpn
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              UPDATE tariffs SET device_limit = 10;
+
+              INSERT INTO tariffs(code,name,duration_days,price_rub,device_limit,traffic_limit,remnawave_squad_id,enabled,sort_order)
+              SELECT 'BASIC_3M','Базовый — 3 месяца',90,405.00,10,traffic_limit,remnawave_squad_id,TRUE,20
+              FROM tariffs WHERE code = 'BASIC'
+              ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name,duration_days=EXCLUDED.duration_days,
+                  price_rub=EXCLUDED.price_rub,device_limit=EXCLUDED.device_limit,enabled=TRUE,sort_order=EXCLUDED.sort_order;
+
+              INSERT INTO tariffs(code,name,duration_days,price_rub,device_limit,traffic_limit,remnawave_squad_id,enabled,sort_order)
+              SELECT 'BASIC_6M','Базовый — 6 месяцев',180,720.00,10,traffic_limit,remnawave_squad_id,TRUE,30
+              FROM tariffs WHERE code = 'BASIC'
+              ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name,duration_days=EXCLUDED.duration_days,
+                  price_rub=EXCLUDED.price_rub,device_limit=EXCLUDED.device_limit,enabled=TRUE,sort_order=EXCLUDED.sort_order;
+
+              INSERT INTO tariffs(code,name,duration_days,price_rub,device_limit,traffic_limit,remnawave_squad_id,enabled,sort_order)
+              SELECT 'BASIC_12M','Базовый — 12 месяцев',365,1260.00,10,traffic_limit,remnawave_squad_id,TRUE,40
+              FROM tariffs WHERE code = 'BASIC'
+              ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name,duration_days=EXCLUDED.duration_days,
+                  price_rub=EXCLUDED.price_rub,device_limit=EXCLUDED.device_limit,enabled=TRUE,sort_order=EXCLUDED.sort_order;

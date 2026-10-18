@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-remove-blocked-device-guards
+      author: abcvpn
+      changes:
+        - sql:
+            sql: DELETE FROM devices WHERE hwid LIKE 'ABC_VPNBLOCKED%';

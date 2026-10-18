@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-support-message-routes
+      author: abcvpn
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              CREATE TABLE support_message_routes (
+                  update_id BIGINT PRIMARY KEY,
+                  telegram_id BIGINT NOT NULL REFERENCES users(telegram_id) ON DELETE CASCADE,
+                  user_message_id INTEGER NOT NULL,
+                  admin_message_id INTEGER UNIQUE,
+                  direction VARCHAR(16) NOT NULL CHECK (direction IN ('USER_TO_ADMIN','ADMIN_TO_USER')),
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+              );

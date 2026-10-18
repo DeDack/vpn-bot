@@ -1,0 +1,100 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-initial-schema
+      author: abcvpn
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              CREATE TABLE campaigns (
+                  id BIGSERIAL PRIMARY KEY,
+                  code VARCHAR(64) NOT NULL UNIQUE,
+                  name VARCHAR(255) NOT NULL,
+                  comment TEXT,
+                  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+              );
+
+              CREATE TABLE users (
+                  telegram_id BIGINT PRIMARY KEY,
+                  username VARCHAR(255),
+                  first_name VARCHAR(255),
+                  trial_used BOOLEAN NOT NULL DEFAULT FALSE,
+                  source_type VARCHAR(16) NOT NULL,
+                  campaign_id BIGINT REFERENCES campaigns(id),
+                  referrer_telegram_id BIGINT REFERENCES users(telegram_id),
+                  referral_code VARCHAR(32) NOT NULL UNIQUE,
+                  is_banned BOOLEAN NOT NULL DEFAULT FALSE,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  last_activity_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  CONSTRAINT users_source_type_check CHECK (source_type IN ('ORGANIC', 'CAMPAIGN', 'REFERRAL')),
+                  CONSTRAINT users_no_self_referral CHECK (referrer_telegram_id IS NULL OR referrer_telegram_id <> telegram_id)
+              );
+              CREATE INDEX users_campaign_idx ON users(campaign_id);
+              CREATE INDEX users_referrer_idx ON users(referrer_telegram_id);
+              CREATE INDEX users_username_idx ON users(LOWER(username));
+
+              CREATE TABLE tariffs (
+                  id BIGSERIAL PRIMARY KEY,
+                  code VARCHAR(64) NOT NULL UNIQUE,
+                  name VARCHAR(255) NOT NULL,
+                  duration_days INTEGER NOT NULL CHECK (duration_days > 0),
+                  price_rub NUMERIC(12,2) NOT NULL CHECK (price_rub >= 0),
+                  device_limit INTEGER NOT NULL CHECK (device_limit > 0),
+                  traffic_limit BIGINT CHECK (traffic_limit IS NULL OR traffic_limit > 0),
+                  remnawave_squad_id UUID NOT NULL,
+                  enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                  sort_order INTEGER NOT NULL DEFAULT 0
+              );
+              CREATE INDEX tariffs_enabled_order_idx ON tariffs(enabled, sort_order);
+
+              CREATE TABLE subscriptions (
+                  telegram_id BIGINT PRIMARY KEY REFERENCES users(telegram_id) ON DELETE CASCADE,
+                  tariff_id BIGINT NOT NULL REFERENCES tariffs(id),
+                  expires_at TIMESTAMPTZ,
+                  revoked BOOLEAN NOT NULL DEFAULT FALSE,
+                  remnawave_user_id VARCHAR(64),
+                  subscription_url TEXT,
+                  sync_status VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+                  sync_retry_count INTEGER NOT NULL DEFAULT 0 CHECK (sync_retry_count >= 0),
+                  sync_next_at TIMESTAMPTZ,
+                  sync_error VARCHAR(1000),
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  CONSTRAINT subscriptions_sync_status_check CHECK (sync_status IN ('PENDING', 'SYNCED', 'ERROR'))
+              );
+              CREATE INDEX subscriptions_sync_idx ON subscriptions(sync_status, sync_next_at);
+              CREATE INDEX subscriptions_expiry_idx ON subscriptions(expires_at) WHERE revoked = FALSE;
+
+              CREATE TABLE payments (
+                  id UUID PRIMARY KEY,
+                  telegram_id BIGINT NOT NULL REFERENCES users(telegram_id),
+                  tariff_id BIGINT NOT NULL REFERENCES tariffs(id),
+                  platega_transaction_id UUID UNIQUE,
+                  amount_rub NUMERIC(12,2) NOT NULL CHECK (amount_rub > 0),
+                  paid_amount_rub NUMERIC(12,2),
+                  status VARCHAR(16) NOT NULL,
+                  payment_url TEXT,
+                  payment_expires_at TIMESTAMPTZ,
+                  creation_uncertain BOOLEAN NOT NULL DEFAULT FALSE,
+                  terms_version VARCHAR(64) NOT NULL,
+                  privacy_version VARCHAR(64) NOT NULL,
+                  accepted_at TIMESTAMPTZ NOT NULL,
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  paid_at TIMESTAMPTZ,
+                  CONSTRAINT payments_status_check CHECK (status IN ('PENDING', 'PAID', 'CANCELED', 'CHARGEBACK'))
+              );
+              CREATE INDEX payments_user_created_idx ON payments(telegram_id, created_at DESC);
+              CREATE INDEX payments_status_idx ON payments(status);
+
+              CREATE TABLE referral_rewards (
+                  id BIGSERIAL PRIMARY KEY,
+                  referrer_telegram_id BIGINT NOT NULL REFERENCES users(telegram_id),
+                  referred_telegram_id BIGINT NOT NULL REFERENCES users(telegram_id),
+                  event VARCHAR(32) NOT NULL,
+                  days INTEGER NOT NULL CHECK (days > 0),
+                  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  CONSTRAINT referral_rewards_event_check CHECK (event IN ('TRIAL', 'FIRST_PAYMENT')),
+                  CONSTRAINT referral_rewards_unique_event UNIQUE (referrer_telegram_id, referred_telegram_id, event)
+              );
+              CREATE INDEX referral_rewards_referred_idx ON referral_rewards(referred_telegram_id);

@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-trial-duration
+      author: abcvpn
+      changes:
+        - sql:
+            sql: UPDATE tariffs SET duration_days = 3 WHERE code = 'TRIAL';

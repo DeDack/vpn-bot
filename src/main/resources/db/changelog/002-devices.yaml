@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-devices
+      author: abcvpn
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE devices (
+                  id BIGSERIAL PRIMARY KEY,
+                  user_id BIGINT NOT NULL REFERENCES users(telegram_id) ON DELETE CASCADE,
+                  hwid VARCHAR(64) NOT NULL,
+                  device_model VARCHAR(255),
+                  device_os VARCHAR(100),
+                  os_version VARCHAR(100),
+                  status VARCHAR(16) NOT NULL,
+                  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  CONSTRAINT devices_status_check CHECK (status IN ('ACTIVE', 'BLOCKED')),
+                  CONSTRAINT devices_user_hwid_unique UNIQUE (user_id, hwid)
+              );
+              CREATE INDEX devices_user_status_idx ON devices(user_id, status);
