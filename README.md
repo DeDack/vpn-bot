@@ -61,4 +61,6 @@ PostgreSQL integration-тесты используют Testcontainers, поэт�
 
 Пример маршрутизации находится в `deploy/Caddyfile`. Перед использованием замените домены и проверьте имена контейнеров. Запросы Happ с заголовком `X-Hwid` направляются через abc-vpn для проверки подписки и лимита устройств, а обычное открытие ссылки остаётся на Remnawave Subscription Page.
 
+Отдельная инструкция по установке панели Remnawave, Subscription Page и подключению нод: [README_REMNAWAVE.md](README_REMNAWAVE.md).
+
 Храните токены Telegram, Remnawave, Platega, пароли PostgreSQL и административные секреты только во внешнем `.env` или в менеджере секретов. В репозитории реальных credentials нет.
